@@ -4,7 +4,6 @@ from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import cv2
-import numpy as np
 import os
 from typing import List, Tuple
 import shutil
@@ -38,12 +37,14 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 os.makedirs(STATIC_FOLDER, exist_ok=True)
 
-# Mount the static files directory
-app.mount("/static", StaticFiles(directory=STATIC_FOLDER), name="static")
+# Serve React build folder
+build_path = os.path.join(os.path.dirname(__file__), "../React/build")
+if os.path.exists(build_path):
+    app.mount("/", StaticFiles(directory=build_path, html=True), name="static")
 
 @app.get("/")
 async def read_root():
-    return FileResponse(f'{STATIC_FOLDER}/index.html')
+    return FileResponse(FileResponse(os.path.join(build_path, "index.html")))
 
 class ProcessingStatus(BaseModel):
     job_id: str
