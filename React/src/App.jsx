@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { FaUpload, FaEraser } from 'react-icons/fa';
-import { Upload, Loader2 } from 'lucide-react';
+import { Upload, Loader2, Download, Eraser } from 'lucide-react';
 import axiosInstance from './axiosInstance';
 import './App.css';
 
@@ -38,6 +38,7 @@ function App() {
   };
 
   const handleFile = (file) => {
+    setProcessedVideoUrl(null)
     if (file && file.type.startsWith('video/')) {
       const videoUrl = URL.createObjectURL(file);
       setVideoFile(videoUrl);
@@ -96,11 +97,11 @@ function App() {
           const videoBlob = new Blob([downloadResponse.data], { type: 'video/mp4' });
           const url = window.URL.createObjectURL(videoBlob);
 
-          const link = document.createElement('a');
-          link.href = url;
-          link.setAttribute('download', 'inpainted_video.mp4');
-          document.body.appendChild(link);
-          link.click();
+          // const link = document.createElement('a');
+          // link.href = url;
+          // link.setAttribute('download', 'inpainted_video.mp4');
+          // document.body.appendChild(link);
+          // link.click();
 
           setProcessedVideoUrl(url);
         } else if (status === 'failed') {
@@ -167,26 +168,32 @@ function App() {
         />
       </div>
 
-      <button
-        onClick={handleRemoveWatermark}
-        disabled={!videoFile || isProcessing}
-        className="mt-8 px-8 py-3 border-2 border-white text-[#F0FEFF] hover:text-black hover:scale-105 transition-all duration-300 relative overflow-hidden group rounded-lg"
-      >
-        <span className="absolute inset-0 bg-white transition-all duration-300 transform -translate-x-full group-hover:translate-x-0"></span>
-          <span className="relative z-10 flex items-center ">
-          {isProcessing ? (
-              <span className="flex items-center justify-center gap-2">
-                <Loader2 className="w-5 h-5 animate-spin" />
-                Processing... {progress.toFixed(2)}%
-              </span>
-            ) : (
-              <>
-              <FaEraser className="mr-2" /> Remove Watermark
-              </>
-            )}
-            
-          </span>
-      </button>
+      <div className="mt-8 flex space-x-4">
+        <button
+          disabled={!videoFile || isProcessing}
+          onClick={handleRemoveWatermark}
+          className="px-8 py-3 border-2 border-white text-white hover:text-black hover:scale-105 transition-all duration-300 relative overflow-hidden group flex items-center"
+        >
+          <Eraser className="mr-2 z-10" />
+          <span className="absolute inset-0 bg-white transition-all duration-300 transform -translate-x-full group-hover:translate-x-0"></span>
+          <span className="relative z-10">Remove Watermark</span>
+        </button>
+        {processedVideoUrl && (
+          <a
+            href={processedVideoUrl}
+            download="inpainted_video.mp4"
+            className="px-8 py-3 border-2 border-green-500 text-green-500 hover:text-white hover:bg-green-500 hover:scale-105 transition-all duration-300 relative overflow-hidden group flex items-center"
+          >
+            <Download className="mr-2" />
+            <span className="relative z-10">Download Processed Video</span>
+          </a>
+        )}
+      </div>
+      {isProcessing && (
+        <div className="mt-4 text-white">
+          Processing: {progress.toFixed(2)}%
+        </div>
+      )}
     </div>
   );
 }
