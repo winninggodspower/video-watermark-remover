@@ -125,7 +125,7 @@ function App() {
             ? 'border-blue-500 bg-blue-500/10'
             : 'border-gray-600 hover:border-gray-500 bg-gray-800/50'
           }
-            w-[42rem] max-h-[70vh] flex flex-col items-center justify-center p-4
+            w-[42rem] max-h-[70vh] max-w-full flex flex-col items-center justify-center p-4
           `}
         style={{ aspectRatio }}
         onDrop={handleDrop}
