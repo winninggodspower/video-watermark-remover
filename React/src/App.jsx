@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { FaUpload, FaEraser } from 'react-icons/fa';
 import { Upload, Loader2 } from 'lucide-react';
-import axios from 'axios';
+import axiosInstance from './axiosInstance';
 import './App.css';
 
 function App() {
@@ -67,7 +67,7 @@ function App() {
       const formData = new FormData();      
       formData.append('video', fileInputRef.current.files[0]);
 
-      const response = await axios.post('http://127.0.0.1:8000/inpaint', formData, {
+      const response = await axiosInstance.post('/inpaint', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -80,7 +80,7 @@ function App() {
       
 
       const interval = setInterval(async () => {         
-        const statusResponse = await axios.get(`http://127.0.0.1:8000/status/${job_id}`);
+        const statusResponse = await axiosInstance.get(`/status/${job_id}`);
         
         const { progress, status } = statusResponse.data;
         setProgress(progress);
@@ -88,7 +88,7 @@ function App() {
         if (status === 'completed') {
           clearInterval(interval);
           setIsProcessing(false);
-          const downloadResponse = await axios.get(`http://127.0.0.1:8000/download/${job_id}`, {
+          const downloadResponse = await axiosInstance.get(`/download/${job_id}`, {
             responseType: 'blob',
           });
 
