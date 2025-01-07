@@ -44,7 +44,7 @@ if os.path.exists(build_path):
 
 @app.get("/")
 async def read_root():
-    return FileResponse(FileResponse(os.path.join(build_path, "index.html")))
+    return FileResponse(os.path.join(build_path, "index.html"))
 
 class ProcessingStatus(BaseModel):
     job_id: str
