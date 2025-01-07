@@ -38,7 +38,7 @@ os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 os.makedirs(STATIC_FOLDER, exist_ok=True)
 
 # Serve React build folder
-build_path = os.path.join(os.path.dirname(__file__), "../React/build")
+build_path = os.path.join(os.path.dirname(__file__), "../React/dist")
 if os.path.exists(build_path):
     app.mount("/", StaticFiles(directory=build_path, html=True), name="static")
 
