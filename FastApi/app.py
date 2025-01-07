@@ -37,8 +37,8 @@ os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 
 # Serve React build folder
 build_path = os.path.join(os.path.dirname(__file__), "../React/dist")
-# if os.path.exists(build_path):
-#     app.mount("/", StaticFiles(directory=build_path, html=True), name="static")
+if os.path.exists(build_path):
+    app.mount("/static", StaticFiles(directory=build_path, html=True), name="static")
 
 @app.get("/")
 async def read_root():
