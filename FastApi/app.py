@@ -26,7 +26,6 @@ app.add_middleware(
 UPLOAD_FOLDER = "uploads"
 OUTPUT_FOLDER = "outputs"
 ALLOWED_VIDEO_EXTENSIONS = {"mp4"}
-STATIC_FOLDER = "static" 
 
 # Mask paths
 LANDSCAPE_MASK_PATH = "masks/landscape-mask.png"
@@ -35,7 +34,6 @@ PORTRAIT_MASK_PATH = "masks/portrait-mask.png"
 # Ensure directories exist
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(OUTPUT_FOLDER, exist_ok=True)
-os.makedirs(STATIC_FOLDER, exist_ok=True)
 
 # Serve React build folder
 build_path = os.path.join(os.path.dirname(__file__), "../React/dist")
