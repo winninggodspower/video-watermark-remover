@@ -1,0 +1,13 @@
+services:
+  # A Docker web service
+  - type: web
+    name: fastapi-example
+    runtime: python
+    plan: free
+    autoDeploy: false
+    build:
+          path: ./FastApi
+    buildCommand: |
+      cd ../React && npm install && npm run build
+      cd ../FastApi && pip install -r requirements.txt
+    startCommand: uvicorn app:app --host 0.0.0.0 --port $PORT
