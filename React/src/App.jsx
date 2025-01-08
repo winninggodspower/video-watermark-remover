@@ -8,6 +8,7 @@ function App() {
   const [videoFile, setVideoFile] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   const [aspectRatio, setAspectRatio] = useState('16/9');
   const [progress, setProgress] = useState(0);
@@ -89,6 +90,7 @@ function App() {
         if (status === 'completed') {
           clearInterval(interval);
           setIsProcessing(false);
+          setIsDownloading(true);
           const downloadResponse = await axiosInstance.get(`/download/${job_id}`, {
             responseType: 'blob',
           });
@@ -97,13 +99,8 @@ function App() {
           const videoBlob = new Blob([downloadResponse.data], { type: 'video/mp4' });
           const url = window.URL.createObjectURL(videoBlob);
 
-          // const link = document.createElement('a');
-          // link.href = url;
-          // link.setAttribute('download', 'inpainted_video.mp4');
-          // document.body.appendChild(link);
-          // link.click();
-
           setProcessedVideoUrl(url);
+          setIsDownloading(false);
         } else if (status === 'failed') {
           clearInterval(interval);
           setIsProcessing(false);
@@ -178,7 +175,7 @@ function App() {
           <span className="absolute inset-0 bg-white transition-all duration-300 transform -translate-x-full group-hover:translate-x-0"></span>
           <span className="relative z-10">Remove Watermark</span>
         </button>
-        {processedVideoUrl && (
+        {processedVideoUrl && !isDownloading && (
           <a
             href={processedVideoUrl}
             download="inpainted_video.mp4"
@@ -187,6 +184,11 @@ function App() {
             <Download className="mr-2" />
             <span className="relative z-10">Download Processed Video</span>
           </a>
+        )}
+        {isDownloading && (
+          <div className="px-8 py-3 border-2 border-green-500 text-green-500 flex items-center">
+            <span className="relative z-10">Downloading...</span>
+          </div>
         )}
       </div>
       {isProcessing && (
