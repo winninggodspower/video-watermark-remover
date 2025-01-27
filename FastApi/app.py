@@ -1,4 +1,5 @@
 import logging
+import subprocess
 from fastapi import FastAPI, UploadFile, HTTPException, BackgroundTasks
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -23,8 +24,9 @@ app.add_middleware(
 )
 
 # Constants
-UPLOAD_FOLDER = "uploads"
-OUTPUT_FOLDER = "outputs"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+UPLOAD_FOLDER = os.path.join(BASE_DIR, "uploads")
+OUTPUT_FOLDER = os.path.join(BASE_DIR, "outputs")
 ALLOWED_VIDEO_EXTENSIONS = {"mp4"}
 
 # Mask paths
@@ -68,7 +70,7 @@ def select_mask_path(width: int, height: int) -> str:
     aspect_ratio = width / height
     return LANDSCAPE_MASK_PATH if aspect_ratio > 1 else PORTRAIT_MASK_PATH
 
-async def process_video_task(video_path: str, job_id: str):
+async def process_video_task(video_path: str, audio_path: str, job_id: str):
     try:
         # Get video dimensions and select appropriate mask
         width, height = get_video_dimensions(video_path)
@@ -78,13 +80,14 @@ async def process_video_task(video_path: str, job_id: str):
         mask = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
         if mask is None:
             raise ValueError(f"Failed to load mask from {mask_path}")
+        mask = cv2.resize(mask, (width, height), interpolation=cv2.INTER_NEAREST)
         logging.debug(f"Mask dimensions: width={mask.shape[1]}, height={mask.shape[0]}")
         
         cap = cv2.VideoCapture(video_path)
         total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
         fps = int(cap.get(cv2.CAP_PROP_FPS))
         
-        output_filename = f"{job_id}_output.mp4"
+        output_filename = f"{job_id}_output-temp.mp4"
         output_path = os.path.join(OUTPUT_FOLDER, output_filename)
         
         fourcc = cv2.VideoWriter_fourcc(*'mp4v')
@@ -113,8 +116,14 @@ async def process_video_task(video_path: str, job_id: str):
         cap.release()
         out.release()
         
+        # add back the audio        
+        final_output_path = os.path.join(OUTPUT_FOLDER, f"{job_id}_output.mp4")
+        subprocess.run([
+            "ffmpeg", "-i", output_path, "-i", audio_path, "-c:v", "copy", "-c:a", "aac", "-y", final_output_path
+        ])
+
         processing_jobs[job_id].status = "completed"
-        processing_jobs[job_id].output_path = output_path
+        processing_jobs[job_id].output_path = final_output_path
         
     except Exception as e:
         print(e)
@@ -126,6 +135,9 @@ async def process_video_task(video_path: str, job_id: str):
             cap.release()
         if os.path.exists(video_path):
             os.remove(video_path)
+            
+        if os.path.exists(audio_path):
+            os.remove(audio_path)
 
 @app.post("/inpaint")
 async def inpaint_video(
@@ -140,17 +152,24 @@ async def inpaint_video(
     # Save uploaded video
     video_path = os.path.join(UPLOAD_FOLDER, f"{job_id}_video.mp4")
     
+    
     try:
         with open(video_path, "wb") as buffer:
             shutil.copyfileobj(video.file, buffer)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to save uploaded video: {str(e)}")
     
+    # Extract audio using FFmpeg
+    audio_path = os.path.join(UPLOAD_FOLDER, f"{job_id}_audio.mp3")
+    subprocess.run([
+        "ffmpeg", "-i", video_path, "-q:a", "0", "-map", "a", audio_path
+    ])  
+    
     # Create job status
     processing_jobs[job_id] = ProcessingStatus(job_id=job_id, status="processing")
     
     # Start processing in background
-    background_tasks.add_task(process_video_task, video_path, job_id)
+    background_tasks.add_task(process_video_task, video_path, audio_path, job_id)
     
     return {"job_id": job_id}
 
