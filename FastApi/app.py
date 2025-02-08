@@ -1,3 +1,4 @@
+from enum import Enum
 import logging
 import subprocess
 from fastapi import FastAPI, UploadFile, HTTPException, BackgroundTasks
@@ -12,6 +13,9 @@ from pydantic import BaseModel
 import uuid
 import asyncio
 
+from FastApi.constants import UPLOAD_FOLDER, ProcessingStatus, VideoType, WatermarkLocation
+from FastApi.utils import is_allowed_video, process_video_task
+
 app = FastAPI()
 
 # CORS middleware
@@ -23,20 +27,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Constants
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-UPLOAD_FOLDER = os.path.join(BASE_DIR, "uploads")
-OUTPUT_FOLDER = os.path.join(BASE_DIR, "outputs")
-ALLOWED_VIDEO_EXTENSIONS = {"mp4"}
-
-# Mask paths
-LANDSCAPE_MASK_PATH = "masks/landscape-mask.png"
-PORTRAIT_MASK_PATH = "masks/portrait-mask.png"
-
-# Ensure directories exist
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-os.makedirs(OUTPUT_FOLDER, exist_ok=True)
-
 # Serve React build folder
 build_path = os.path.join(os.path.dirname(__file__), "../React/dist")
 if os.path.exists(build_path):
@@ -46,104 +36,32 @@ if os.path.exists(build_path):
 async def read_root():
     return FileResponse(os.path.join(build_path, "index.html"))
 
-class ProcessingStatus(BaseModel):
-    job_id: str
-    status: str
-    progress: float = 0
-    output_path: str = None
-    error: str = None
-
 # In-memory job status storage
 processing_jobs: dict[str, ProcessingStatus] = {}
 
-def is_allowed_video(filename: str) -> bool:
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_VIDEO_EXTENSIONS
 
-def get_video_dimensions(video_path: str) -> Tuple[int, int]:
-    cap = cv2.VideoCapture(video_path)
-    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-    cap.release()
-    return width, height
+"""
+Endpoint to inpaint a video by removing the watermark.
 
-def select_mask_path(width: int, height: int) -> str:
-    aspect_ratio = width / height
-    return LANDSCAPE_MASK_PATH if aspect_ratio > 1 else PORTRAIT_MASK_PATH
-
-async def process_video_task(video_path: str, audio_path: str, job_id: str):
-    try:
-        # Get video dimensions and select appropriate mask
-        width, height = get_video_dimensions(video_path)
-        mask_path = select_mask_path(width, height)
-        
-        # Read mask
-        mask = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
-        if mask is None:
-            raise ValueError(f"Failed to load mask from {mask_path}")
-        mask = cv2.resize(mask, (width, height), interpolation=cv2.INTER_NEAREST)
-        logging.debug(f"Mask dimensions: width={mask.shape[1]}, height={mask.shape[0]}")
-        
-        cap = cv2.VideoCapture(video_path)
-        total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-        fps = int(cap.get(cv2.CAP_PROP_FPS))
-        
-        output_filename = f"{job_id}_output-temp.mp4"
-        output_path = os.path.join(OUTPUT_FOLDER, output_filename)
-        
-        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-        out = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
-        
-        processed_frames = 0
-
-        print('processs just started \n')
-        while cap.isOpened():
-            success, frame = cap.read()
-            if not success:
-                break
-            
-            logging.debug(f"Frame dimensions: width={frame.shape[1]}, height={frame.shape[0]}")
-
-            mask_video = cv2.inpaint(frame, mask, 3, cv2.INPAINT_TELEA)
-            out.write(mask_video)
-            
-            processed_frames += 1
-            progress = (processed_frames / total_frames) * 100
-            processing_jobs[job_id].progress = progress
-
-            # Simulate asynchronous progress updates
-            await asyncio.sleep(0.01)
-        
-        cap.release()
-        out.release()
-        
-        # add back the audio        
-        final_output_path = os.path.join(OUTPUT_FOLDER, f"{job_id}_output.mp4")
-        subprocess.run([
-            "ffmpeg", "-i", output_path, "-i", audio_path, "-c:v", "copy", "-c:a", "aac", "-y", final_output_path
-        ])
-
-        processing_jobs[job_id].status = "completed"
-        processing_jobs[job_id].output_path = final_output_path
-        
-    except Exception as e:
-        print(e)
-        processing_jobs[job_id].status = "failed"
-        processing_jobs[job_id].error = str(e)
-    finally:
-        # Ensure the video file is properly closed before attempting to delete it
-        if cap.isOpened():
-            cap.release()
-        if os.path.exists(video_path):
-            os.remove(video_path)
-            
-        if os.path.exists(audio_path):
-            os.remove(audio_path)
+Parameters:
+- video: UploadFile - The video file to be processed.
+- video_type: str - The type of video (default: "renderforest").
+- watermark_location: str - The location of the watermark (default: "bottom_right").
+"""
 
 @app.post("/inpaint")
 async def inpaint_video(
     background_tasks: BackgroundTasks,
-    video: UploadFile
+    video: UploadFile,
+    video_type: VideoType = "renderforest",
+    watermark_location: WatermarkLocation = "bottom_right"
 ):
+    if video_type not in {"renderforest", "capcut"}:
+        raise HTTPException(status_code=400, detail="Invalid video type")
+    
+    if watermark_location not in {"top_left", "top_right", "bottom_left", "bottom_right"}:
+        raise HTTPException(status_code=400, detail="Invalid watermark location")
+    
     if not is_allowed_video(video.filename):
         raise HTTPException(status_code=400, detail="Invalid video file type")
     
@@ -151,7 +69,6 @@ async def inpaint_video(
     
     # Save uploaded video
     video_path = os.path.join(UPLOAD_FOLDER, f"{job_id}_video.mp4")
-    
     
     try:
         with open(video_path, "wb") as buffer:
@@ -169,9 +86,11 @@ async def inpaint_video(
     processing_jobs[job_id] = ProcessingStatus(job_id=job_id, status="processing")
     
     # Start processing in background
-    background_tasks.add_task(process_video_task, video_path, audio_path, job_id)
+    background_tasks.add_task(process_video_task, video_path, audio_path, job_id, video_type, watermark_location, processing_jobs)
     
     return {"job_id": job_id}
+
+
 
 @app.get("/status/{job_id}")
 async def get_status(job_id: str):
