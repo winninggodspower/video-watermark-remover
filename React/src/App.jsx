@@ -145,8 +145,8 @@ function App() {
           </select>
         )}
       </div>
-      <h1 className="text-white font-clashBold mb-4 text-lg">
-        {videoType === "renderforest" ? "RenderForest" : "CapCut"} WaterMark Remover
+      <h1 className="text-white font-medium mb-4 text-lg">
+        {videoType === "renderforest" ? "RenderForest" : "CapCut"} WaterMark Remover 🎥
       </h1>
       <div
         className={`
@@ -196,7 +196,7 @@ function App() {
         >
           <Eraser className="mr-2 z-10" />
           <span className="absolute inset-0 bg-white transition-all duration-300 transform -translate-x-full group-hover:translate-x-0"></span>
-          <span className="relative z-10">Remove Watermark</span>
+          <span className="relative z-10">Remove Watermark 🧽</span>
         </button>
         {processedVideoUrl && !isDownloading && (
           <a
@@ -205,16 +205,16 @@ function App() {
             className="px-8 py-3 border-2 border-green-500 text-green-500 hover:text-white hover:bg-green-500 hover:scale-105 transition-all duration-300 relative overflow-hidden group flex items-center"
           >
             <Download className="mr-2" />
-            <span className="relative z-10">Download Processed Video</span>
+            <span className="relative z-10">Download Processed Video </span>
           </a>
         )}
         {isDownloading && (
           <div className="px-8 py-3 border-2 border-green-500 text-green-500 flex items-center">
-            <span className="relative z-10">Downloading...</span>
+            <span className="relative z-10">Downloading... ⏳</span>
           </div>
         )}
       </div>
-      {isProcessing && <div className="mt-4 text-white">Processing: {progress.toFixed(2)}%</div>}
+      {isProcessing && <div className="mt-4 text-white">Processing: {progress.toFixed(2)}% ⏳</div>}
     </div>
   )
 }
