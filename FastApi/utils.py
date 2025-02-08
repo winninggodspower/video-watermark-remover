@@ -6,7 +6,7 @@ from typing import Tuple
 import uuid
 import cv2
 
-from FastApi.constants import (
+from constants import (
     ALLOWED_VIDEO_EXTENSIONS,
     CAPCUT_LANDSCAPE_MASK_PATH_FULL, 
     CAPCUT_PORTRAIT_MASK_PATH_FULL, 
@@ -29,18 +29,20 @@ def get_video_dimensions(video_path: str) -> Tuple[int, int]:
     cap.release()
     return width, height
 
-def select_mask_path(
+def select_mask(
     video_type: VideoType, 
     width: int, 
     height: int, 
     watermark_location: WatermarkLocation
-) -> str:
+) -> cv2.Mat:
     aspect_ratio = width / height
     if video_type == VideoType.renderforest:
         if aspect_ratio > 1:
-            return RENDERFOREST_LANDSCAPE_MASK_PATH
+            mask_path = RENDERFOREST_LANDSCAPE_MASK_PATH
         else:
-            return RENDERFOREST_PORTRAIT_MASK_PATH
+            mask_path = RENDERFOREST_PORTRAIT_MASK_PATH
+        return cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
+    
     elif video_type == VideoType.capcut:
         if aspect_ratio > 1:
             mask_path = CAPCUT_LANDSCAPE_MASK_PATH_FULL
@@ -61,9 +63,7 @@ def select_mask_path(
             mask = cv2.flip(mask, 1) 
             mask = cv2.rotate(mask, cv2.ROTATE_180) 
         
-        transformed_mask_path = os.path.join(OUTPUT_FOLDER, f"transformed_mask_{uuid.uuid4()}.png")
-        cv2.imwrite(transformed_mask_path, mask)
-        return transformed_mask_path
+        return mask
     else:
         raise ValueError("Invalid video type")
 
@@ -76,19 +76,21 @@ async def process_video_task(
     watermark_location: WatermarkLocation,
     processing_jobs: dict[str, ProcessingStatus]
 ):
+    cap = None  # Initialize cap to None
+    print(video_type, watermark_location)
     try:
         # Get video dimensions and select appropriate mask
         width, height = get_video_dimensions(video_path)
-        mask_path = select_mask_path(video_type, width, height, watermark_location)
+        mask = select_mask(video_type, width, height, watermark_location)
         
-        # Read mask
-        mask = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
-        if mask is None:
-            raise ValueError(f"Failed to load mask from {mask_path}")
+        # Resize mask
         mask = cv2.resize(mask, (width, height), interpolation=cv2.INTER_NEAREST)
         logging.debug(f"Mask dimensions: width={mask.shape[1]}, height={mask.shape[0]}")
         
         cap = cv2.VideoCapture(video_path)
+        if not cap.isOpened():
+            raise ValueError(f"Failed to open video file: {video_path}")
+        
         total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
         fps = int(cap.get(cv2.CAP_PROP_FPS))
         
@@ -134,11 +136,14 @@ async def process_video_task(
         processing_jobs[job_id].error = str(e)
     finally:
         # Ensure the video file is properly closed before attempting to delete it
-        if cap.isOpened():
+        if cap is not None and cap.isOpened():
             cap.release()
         if os.path.exists(video_path):
             os.remove(video_path)
             
         if os.path.exists(audio_path):
             os.remove(audio_path)
+            
+        if os.path.exists(output_path):
+            os.remove(output_path)
 

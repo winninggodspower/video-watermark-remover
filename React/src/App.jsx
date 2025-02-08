@@ -15,6 +15,9 @@ function App() {
   const [jobId, setJobId] = useState(null);
 
   const [processedVideoUrl, setProcessedVideoUrl] = useState(null);
+
+  const [videoType, setVideoType] = useState("renderforest")
+  const [watermarkLocation, setWatermarkLocation] = useState("top_right")
   
   const fileInputRef = useRef(null);
 
@@ -68,6 +71,11 @@ function App() {
     try {
       const formData = new FormData();      
       formData.append('video', fileInputRef.current.files[0]);
+      formData.append("video_type", videoType)
+
+      if (videoType === "capcut") {
+        formData.append("watermark_location", watermarkLocation)
+      }
 
       const response = await axiosInstance.post('/inpaint', formData, {
         headers: {
@@ -115,14 +123,35 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 flex flex-col items-center justify-center p-4">
-      <h1 className='text-white font-clashBold mb-4 text-lg'>RenderForest WaterMark Remover</h1>
+      <div className="flex items-center gap-4 mb-4">
+        <select
+          value={videoType}
+          onChange={(e) => setVideoType(e.target.value)}
+          className="bg-gray-800 text-white px-4 py-2 rounded-lg border border-gray-600 focus:border-blue-500 focus:outline-none"
+        >
+          <option value="renderforest">RenderForest</option>
+          <option value="capcut">CapCut</option>
+        </select>
+        {videoType === "capcut" && (
+          <select
+            value={watermarkLocation}
+            onChange={(e) => setWatermarkLocation(e.target.value)}
+            className="bg-gray-800 text-white px-4 py-2 rounded-lg border border-gray-600 focus:border-blue-500 focus:outline-none"
+          >
+            <option value="top_left">Top Left</option>
+            <option value="top_right">Top Right</option>
+            <option value="bottom_left">Bottom Left</option>
+            <option value="bottom_right">Bottom Right</option>
+          </select>
+        )}
+      </div>
+      <h1 className="text-white font-clashBold mb-4 text-lg">
+        {videoType === "renderforest" ? "RenderForest" : "CapCut"} WaterMark Remover
+      </h1>
       <div
         className={`
             relative rounded-lg border-2 border-dashed transition-all duration-300 
-            ${isDragging
-            ? 'border-blue-500 bg-blue-500/10'
-            : 'border-gray-600 hover:border-gray-500 bg-gray-800/50'
-          }
+            ${isDragging ? "border-blue-500 bg-blue-500/10" : "border-gray-600 hover:border-gray-500 bg-gray-800/50"}
             w-[42rem] max-h-[70vh] max-w-full flex flex-col items-center justify-center p-4
           `}
         style={{ aspectRatio }}
@@ -135,7 +164,7 @@ function App() {
           <>
             <video src={videoFile} controls className="max-w-full max-h-full" />
             {isProcessing && (
-              <div className="w-full bg-gray-200 rounded-full h-2.5 mt-4">
+              <div className="w-full bg-gray-200 rounded-full h-2.5 my-4">
                 <div
                   className="bg-green-500 h-2.5 rounded-full transition-all duration-500 ease-in-out"
                   style={{ width: `${progress}%` }}
@@ -145,22 +174,16 @@ function App() {
           </>
         ) : (
           <div className="flex flex-col items-center gap-4 pointer-events-none">
-             <Upload 
-              className={`w-12 h-12 ${isDragging ? 'text-blue-500' : 'text-gray-400'}`}
-            />
-            <p className="text-lg font-medium text-gray-200">
-              Drag and drop a video file here
-            </p>
-            <p className="text-sm text-gray-400">
-              or click to select from your computer
-            </p>
+            <Upload className={`w-12 h-12 ${isDragging ? "text-blue-500" : "text-gray-400"}`} />
+            <p className="text-lg font-medium text-gray-200">Drag and drop a video file here</p>
+            <p className="text-sm text-gray-400">or click to select from your computer</p>
           </div>
         )}
         <input
           type="file"
           accept="video/*"
           ref={fileInputRef}
-          style={{ display: 'none' }}
+          style={{ display: "none" }}
           onChange={handleFileChange}
         />
       </div>
@@ -191,13 +214,9 @@ function App() {
           </div>
         )}
       </div>
-      {isProcessing && (
-        <div className="mt-4 text-white">
-          Processing: {progress.toFixed(2)}%
-        </div>
-      )}
+      {isProcessing && <div className="mt-4 text-white">Processing: {progress.toFixed(2)}%</div>}
     </div>
-  );
+  )
 }
 
 export default App;

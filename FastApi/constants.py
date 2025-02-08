@@ -12,8 +12,8 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 
 # Mask paths
-RENDERFOREST_LANDSCAPE_MASK_PATH = "masks/landscape-mask.png"
-RENDERFOREST_PORTRAIT_MASK_PATH = "masks/portrait-mask.png"
+RENDERFOREST_LANDSCAPE_MASK_PATH = "masks/renderforest-landscape-mask.png"
+RENDERFOREST_PORTRAIT_MASK_PATH = "masks/renderforest-portrait-mask.png"
 
 CAPCUT_LANDSCAPE_MASK_PATH_FULL = "masks/capcut-landscape-mask.png"
 CAPCUT_LANDSCAPE_MASK_PATH_SHORT = "masks/capcut-landscape-mask.png"

@@ -1,20 +1,17 @@
-from enum import Enum
-import logging
 import subprocess
-from fastapi import FastAPI, UploadFile, HTTPException, BackgroundTasks
+from typing import Annotated
+from fastapi import FastAPI, Form, UploadFile, HTTPException, BackgroundTasks
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-import cv2
 import os
-from typing import List, Tuple
 import shutil
-from pydantic import BaseModel
 import uuid
-import asyncio
 
-from FastApi.constants import UPLOAD_FOLDER, ProcessingStatus, VideoType, WatermarkLocation
-from FastApi.utils import is_allowed_video, process_video_task
+from pydantic import BaseModel
+
+from constants import UPLOAD_FOLDER, ProcessingStatus, VideoType, WatermarkLocation
+from utils import is_allowed_video, process_video_task
 
 app = FastAPI()
 
@@ -46,21 +43,16 @@ Endpoint to inpaint a video by removing the watermark.
 Parameters:
 - video: UploadFile - The video file to be processed.
 - video_type: str - The type of video (default: "renderforest").
-- watermark_location: str - The location of the watermark (default: "bottom_right").
+- watermark_location: str - The location of the watermark (default: "top_left").
 """
 
 @app.post("/inpaint")
 async def inpaint_video(
     background_tasks: BackgroundTasks,
     video: UploadFile,
-    video_type: VideoType = "renderforest",
-    watermark_location: WatermarkLocation = "bottom_right"
-):
-    if video_type not in {"renderforest", "capcut"}:
-        raise HTTPException(status_code=400, detail="Invalid video type")
-    
-    if watermark_location not in {"top_left", "top_right", "bottom_left", "bottom_right"}:
-        raise HTTPException(status_code=400, detail="Invalid watermark location")
+    video_type: Annotated[VideoType, Form()] = VideoType.renderforest,
+    watermark_location: Annotated[WatermarkLocation, Form()] = WatermarkLocation.top_left,
+):  
     
     if not is_allowed_video(video.filename):
         raise HTTPException(status_code=400, detail="Invalid video file type")
