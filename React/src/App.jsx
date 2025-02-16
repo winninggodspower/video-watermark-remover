@@ -1,5 +1,4 @@
 import React, { useState, useRef } from 'react';
-import { FaUpload, FaEraser } from 'react-icons/fa';
 import { Upload, Loader2, Download, Eraser } from 'lucide-react';
 import axiosInstance from './axiosInstance';
 import './App.css';
@@ -16,9 +15,9 @@ function App() {
 
   const [processedVideoUrl, setProcessedVideoUrl] = useState(null);
 
-  const [videoType, setVideoType] = useState("renderforest")
-  const [watermarkLocation, setWatermarkLocation] = useState("top_right")
-  
+  const [videoType, setVideoType] = useState("capcut")
+  const [watermarkLocation, setWatermarkLocation] = useState("top_left")
+
   const fileInputRef = useRef(null);
 
   const handleDrop = (event) => {
@@ -69,7 +68,7 @@ function App() {
     setProgress(0);
 
     try {
-      const formData = new FormData();      
+      const formData = new FormData();
       formData.append('video', fileInputRef.current.files[0]);
       formData.append("video_type", videoType)
 
@@ -87,11 +86,11 @@ function App() {
       setJobId(job_id);
 
       console.log(job_id);
-      
 
-      const interval = setInterval(async () => {         
+
+      const interval = setInterval(async () => {
         const statusResponse = await axiosInstance.get(`/status/${job_id}`);
-        
+
         const { progress, status } = statusResponse.data;
         setProgress(progress);
 
@@ -123,6 +122,16 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 flex flex-col items-center justify-center p-4">
+      {/* Header Section */}
+      <div className="text-center space-y-3 mb-4">
+        <h1 className="text-3xl font-bold bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
+          Video Watermark Remover
+        </h1>
+        <p className="text-gray-400">
+          Remove {videoType === "renderforest" ? "RenderForest" : "CapCut"} watermarks from your videos in
+          seconds
+        </p>
+      </div>
       <div className="flex items-center gap-4 mb-4">
         <select
           value={videoType}
@@ -145,14 +154,14 @@ function App() {
           </select>
         )}
       </div>
-      <h1 className="text-white font-medium mb-4 text-lg">
+      {/* <h1 className="text-white font-medium mb-4 text-lg">
         {videoType === "renderforest" ? "RenderForest" : "CapCut"} WaterMark Remover 🎥
-      </h1>
+      </h1> */}
       <div
         className={`
             relative rounded-lg border-2 border-dashed transition-all duration-300 
-            ${isDragging ? "border-blue-500 bg-blue-500/10" : "border-gray-600 hover:border-gray-500 bg-gray-800/50"}
             w-[42rem] max-h-[70vh] max-w-full flex flex-col items-center justify-center p-4
+            ${isDragging ? "border-blue-500 bg-blue-500/10" : "border-gray-600 hover:border-gray-500 bg-gray-800/50"}
           `}
         style={{ aspectRatio }}
         onDrop={handleDrop}
@@ -163,12 +172,25 @@ function App() {
         {videoFile ? (
           <>
             <video src={videoFile} controls className="max-w-full max-h-full" />
-            {isProcessing && (
+            {/* {isProcessing && (
               <div className="w-full bg-gray-200 rounded-full h-2.5 my-4">
                 <div
                   className="bg-green-500 h-2.5 rounded-full transition-all duration-500 ease-in-out"
                   style={{ width: `${progress}%` }}
                 />
+              </div>
+            )} */}
+            {isProcessing && (
+              <div className="absolute inset-0 bg-black/60 flex items-center justify-center backdrop-blur-sm rounded-lg">
+                <div className="w-full max-w-md space-y-4 p-4">
+                  <div className="h-2 w-full bg-gray-700 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-blue-500 to-blue-600 transition-all duration-500 ease-out"
+                      style={{ width: `${progress}%` }}
+                    />
+                  </div>
+                  <p className="text-center text-white font-medium">Processing: {progress.toFixed(0)}%</p>
+                </div>
               </div>
             )}
           </>

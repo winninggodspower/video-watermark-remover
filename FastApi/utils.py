@@ -144,6 +144,6 @@ async def process_video_task(
         if os.path.exists(audio_path):
             os.remove(audio_path)
             
-        if os.path.exists(output_path):
+        if output_path is not None and os.path.exists(output_path):
             os.remove(output_path)
 
