@@ -10,7 +10,7 @@ import uuid
 
 from FastApi.constants import (
     UPLOAD_FOLDER, ProcessingStatus, VideoType, 
-    WatermarkBounds, WatermarkLocation
+    WatermarkBounds
 )
 from FastApi.utils.process_video import is_allowed_video, process_video_task
 
