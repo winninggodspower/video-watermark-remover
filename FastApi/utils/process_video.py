@@ -142,8 +142,18 @@ async def process_video_task(
         # add back the audio        
         final_output_path = os.path.join(OUTPUT_FOLDER, f"{job_id}_output.mp4")
         subprocess.run([
-            "ffmpeg", "-i", output_path, "-i", audio_path, "-c:v", "copy", "-c:a", "aac", "-y", final_output_path
-        ])
+            "ffmpeg",
+            "-i", output_path,
+            "-i", audio_path,
+            "-c:v", "libx264",   # encode video
+            "-crf", "18",       # visually lossless
+            "-preset", "fast",  # reasonable speed
+            "-pix_fmt", "yuv420p",  # ensure browser compatibility
+            "-c:a", "aac",       # encode audio
+            "-b:a", "192k",
+            "-threads", "0",
+            "-y",final_output_path
+        ], check=True)
 
         processing_jobs[job_id].status = "completed"
         processing_jobs[job_id].output_path = final_output_path
