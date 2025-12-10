@@ -122,7 +122,7 @@ export const WatermarkSelector = ({ videoElement, onBoundsChange }) => {
        * the video's offset (videoOffset) to the bounds.
        */}
       <div
-        className="absolute border-2 border-red-500 bg-red-500/20 pointer-events-auto cursor-move"
+        className="absolute border-2 border-blue-500 bg-blue-500/30 pointer-events-auto cursor-move"
         style={{
           // compute video offset; if videoElement not available, fallback to 0
           left: `${(videoElement && containerRef.current)
@@ -143,14 +143,14 @@ export const WatermarkSelector = ({ videoElement, onBoundsChange }) => {
         
         {/* Resize handle */}
         <div
-          className="absolute bottom-0 right-0 w-4 h-4 bg-red-500 cursor-se-resize"
+          className="absolute bottom-0 right-0 size-3 bg-blue-500 cursor-se-resize"
           onMouseDown={(e) => handleMouseDown(e, 'resize')}
         />
         
         {/* Corner indicators */}
-        <div className="absolute top-0 left-0 w-2 h-2 bg-red-500 rounded-full" />
+        {/* <div className="absolute top-0 left-0 w-2 h-2 bg-red-500 rounded-full" />
         <div className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full" />
-        <div className="absolute bottom-0 left-0 w-2 h-2 bg-red-500 rounded-full" />
+        <div className="absolute bottom-0 left-0 w-2 h-2 bg-red-500 rounded-full" /> */}
       </div>
       
       {/* Info label */}
