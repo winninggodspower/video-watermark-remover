@@ -8,11 +8,11 @@ import os
 import shutil
 import uuid
 
-from FastApi.constants import (
+from .constants import (
     UPLOAD_FOLDER, ProcessingStatus, VideoType, 
     WatermarkBounds
 )
-from FastApi.utils.process_video import is_allowed_video, process_video_task
+from .utils.process_video import is_allowed_video, process_video_task
 
 app = FastAPI()
 
