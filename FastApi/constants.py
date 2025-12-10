@@ -1,5 +1,5 @@
 from enum import Enum
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 import os
 
 # Constants
@@ -26,6 +26,12 @@ class ProcessingStatus(BaseModel):
     progress: float = 0
     output_path: str = None
     error: str = None
+
+class WatermarkBounds(BaseModel):
+    x: int = Field(ge=0, description="X coordinate of watermark top-left corner")
+    y: int = Field(ge=0, description="Y coordinate of watermark top-left corner")
+    width: int = Field(gt=0, description="Width of watermark area")
+    height: int = Field(gt=0, description="Height of watermark area")
 
 # Define Enums for choices
 class VideoType(str, Enum):

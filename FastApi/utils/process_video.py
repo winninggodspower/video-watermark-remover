@@ -2,11 +2,10 @@ import asyncio
 import logging
 import os
 import subprocess
-from typing import Tuple
-import uuid
+from typing import Optional, Tuple
 import cv2
 
-from constants import (
+from FastApi.constants import (
     ALLOWED_VIDEO_EXTENSIONS,
     CAPCUT_LANDSCAPE_MASK_PATH_FULL, 
     CAPCUT_PORTRAIT_MASK_PATH_FULL, 
@@ -14,9 +13,11 @@ from constants import (
     RENDERFOREST_LANDSCAPE_MASK_PATH, 
     RENDERFOREST_PORTRAIT_MASK_PATH, 
     ProcessingStatus, 
-    VideoType, 
+    VideoType,
+    WatermarkBounds, 
     WatermarkLocation
 )
+from FastApi.utils.generate_mask import generate_mask
 
 
 def is_allowed_video(filename: str) -> bool:
@@ -37,7 +38,7 @@ def select_mask(
 ) -> cv2.Mat:
     aspect_ratio = width / height
     if video_type == VideoType.renderforest:
-        if aspect_ratio > 1:
+        if aspect_ratio > 1: # Landscape
             mask_path = RENDERFOREST_LANDSCAPE_MASK_PATH
         else:
             mask_path = RENDERFOREST_PORTRAIT_MASK_PATH
@@ -68,20 +69,38 @@ def select_mask(
         raise ValueError("Invalid video type")
 
 
+
 async def process_video_task(
     video_path: str, 
     audio_path: str, 
     job_id: str, 
     video_type: VideoType,
     watermark_location: WatermarkLocation,
+    watermark_bounds: Optional[WatermarkBounds],
     processing_jobs: dict[str, ProcessingStatus]
 ):
     cap = None  # Initialize cap to None
+    output_path = None
     print(video_type, watermark_location)
+
     try:
-        # Get video dimensions and select appropriate mask
+        # Get video dimensions first (used by mask generation and video writer)
         width, height = get_video_dimensions(video_path)
-        mask = select_mask(video_type, width, height, watermark_location)
+        logging.debug(f"Video dimensions: width={width}, height={height}")
+        print(f"Video dimensions: width={width}, height={height}")
+
+        # Generate or select mask based on whether custom bounds are provided
+        if watermark_bounds:
+            mask = generate_mask(
+                width=width,
+                height=height,
+                watermark_x=watermark_bounds.x,
+                watermark_y=watermark_bounds.y,
+                watermark_width=watermark_bounds.width,
+                watermark_height=watermark_bounds.height,
+            )
+        else:
+            mask = select_mask(video_type, width, height, watermark_location)
         
         # Resize mask
         mask = cv2.resize(mask, (width, height), interpolation=cv2.INTER_NEAREST)
@@ -107,8 +126,6 @@ async def process_video_task(
             if not success:
                 break
             
-            logging.debug(f"Frame dimensions: width={frame.shape[1]}, height={frame.shape[0]}")
-
             mask_video = cv2.inpaint(frame, mask, 3, cv2.INPAINT_TELEA)
             out.write(mask_video)
             

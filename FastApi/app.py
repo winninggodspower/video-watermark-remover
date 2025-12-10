@@ -1,5 +1,5 @@
 import subprocess
-from typing import Annotated
+from typing import Annotated, Optional
 from fastapi import FastAPI, Form, UploadFile, HTTPException, BackgroundTasks
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -8,10 +8,11 @@ import os
 import shutil
 import uuid
 
-from pydantic import BaseModel
-
-from constants import UPLOAD_FOLDER, ProcessingStatus, VideoType, WatermarkLocation
-from utils import is_allowed_video, process_video_task
+from FastApi.constants import (
+    UPLOAD_FOLDER, ProcessingStatus, VideoType, 
+    WatermarkBounds, WatermarkLocation
+)
+from FastApi.utils.process_video import is_allowed_video, process_video_task
 
 app = FastAPI()
 
@@ -52,11 +53,29 @@ async def inpaint_video(
     video: UploadFile,
     video_type: Annotated[VideoType, Form()] = VideoType.renderforest,
     watermark_location: Annotated[WatermarkLocation, Form()] = WatermarkLocation.top_left,
+    watermark_x: Annotated[Optional[int], Form()] = None,
+    watermark_y: Annotated[Optional[int], Form()] = None,
+    watermark_width: Annotated[Optional[int], Form()] = None,
+    watermark_height: Annotated[Optional[int], Form()] = None,
 ):  
     
-    if not is_allowed_video(video.filename):
+    # Validate video file type
+    if video.filename and not is_allowed_video(video.filename):
         raise HTTPException(status_code=400, detail="Invalid video file type")
     
+    # Validate watermark bounds for CapCut
+    if video_type == VideoType.capcut:
+        if not all([watermark_x is not None, watermark_y is not None, watermark_width, watermark_height]):
+            raise HTTPException(
+                status_code=400, 
+                detail="CapCut requires watermark bounds (watermark_x, watermark_y, watermark_width, watermark_height)"
+            )
+        if watermark_width <= 0 or watermark_height <= 0:
+            raise HTTPException(
+                status_code=400,
+                detail="Watermark width and height must be greater than 0"
+            )
+        
     job_id = str(uuid.uuid4())
     
     # Save uploaded video
@@ -76,9 +95,29 @@ async def inpaint_video(
     
     # Create job status
     processing_jobs[job_id] = ProcessingStatus(job_id=job_id, status="processing")
+
+    # Group bounds into a clean object
+    watermark_bounds = None
+    if all([watermark_x is not None, watermark_y is not None, watermark_width, watermark_height]):
+        watermark_bounds = WatermarkBounds(
+            x=watermark_x,
+            y=watermark_y,
+            width=watermark_width,
+            height=watermark_height
+        )
     
+    print('about to start background task')
     # Start processing in background
-    background_tasks.add_task(process_video_task, video_path, audio_path, job_id, video_type, watermark_location, processing_jobs)
+    background_tasks.add_task(
+        process_video_task, 
+        video_path, 
+        audio_path, 
+        job_id, 
+        video_type, 
+        watermark_location, 
+        watermark_bounds,
+        processing_jobs
+    )
     
     return {"job_id": job_id}
 
