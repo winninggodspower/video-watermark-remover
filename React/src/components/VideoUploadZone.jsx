@@ -16,6 +16,8 @@ export const VideoUploadZone = ({
   const fileInputRef = useRef(null);
   const videoRef = useRef(null);
 
+  const [refreshSelector, setRefreshSelector] = useState(0); // to force re-render of WatermarkSelector
+
   const handleDrop = (event) => {
     event.preventDefault();
     setIsDragging(false);
@@ -69,11 +71,16 @@ export const VideoUploadZone = ({
             src={processedVideoUrl || videoFile} 
             controls 
             className="max-w-full max-h-full" 
+            onLoadedMetadata={() => {
+              // force re-render so WatermarkSelector gets correct rect
+              setRefreshSelector((x) => x + 1);
+            }}
           />
           
           {/* Watermark Selector Overlay */}
           {showWatermarkSelector && !isProcessing && !processedVideoUrl && (
             <WatermarkSelector 
+              key={refreshSelector} 
               videoElement={videoRef.current}
               onBoundsChange={onWatermarkBoundsChange}
             />
