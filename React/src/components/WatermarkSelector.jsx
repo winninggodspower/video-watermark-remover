@@ -143,7 +143,7 @@ export const WatermarkSelector = ({ videoElement, onBoundsChange }) => {
         
         {/* Resize handle */}
         <div
-          className="absolute bottom-0 right-0 size-3 bg-blue-500 cursor-se-resize"
+          className="absolute bottom-0 right-0 w-4 h-4 bg-blue-500 cursor-se-resize"
           onMouseDown={(e) => handleMouseDown(e, 'resize')}
         />
         

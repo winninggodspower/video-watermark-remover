@@ -52,7 +52,6 @@ async def inpaint_video(
     background_tasks: BackgroundTasks,
     video: UploadFile,
     video_type: Annotated[VideoType, Form()] = VideoType.renderforest,
-    watermark_location: Annotated[WatermarkLocation, Form()] = WatermarkLocation.top_left,
     watermark_x: Annotated[Optional[int], Form()] = None,
     watermark_y: Annotated[Optional[int], Form()] = None,
     watermark_width: Annotated[Optional[int], Form()] = None,
@@ -114,7 +113,6 @@ async def inpaint_video(
         audio_path, 
         job_id, 
         video_type, 
-        watermark_location, 
         watermark_bounds,
         processing_jobs
     )

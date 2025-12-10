@@ -30,44 +30,17 @@ def get_video_dimensions(video_path: str) -> Tuple[int, int]:
     cap.release()
     return width, height
 
-def select_mask(
-    video_type: VideoType, 
+def select_renderforest_mask(
     width: int, 
     height: int, 
-    watermark_location: WatermarkLocation
 ) -> cv2.Mat:
     aspect_ratio = width / height
-    if video_type == VideoType.renderforest:
-        if aspect_ratio > 1: # Landscape
-            mask_path = RENDERFOREST_LANDSCAPE_MASK_PATH
-        else:
-            mask_path = RENDERFOREST_PORTRAIT_MASK_PATH
-        return cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
-    
-    elif video_type == VideoType.capcut:
-        if aspect_ratio > 1:
-            mask_path = CAPCUT_LANDSCAPE_MASK_PATH_FULL
-        else:
-            mask_path = CAPCUT_PORTRAIT_MASK_PATH_FULL
-        
-        # Load and transform the mask based on watermark location
-        mask = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
-        if mask is None:
-            raise ValueError(f"Failed to load mask from {mask_path}")
-        
-        if watermark_location == WatermarkLocation.top_right:
-            mask = cv2.flip(mask, 1) # Flip horizontally
-        elif watermark_location == WatermarkLocation.bottom_left:
-            mask = cv2.rotate(mask, cv2.ROTATE_180) # Rotate 180 degrees
-        elif watermark_location == WatermarkLocation.bottom_right:
-            # flip then rotate
-            mask = cv2.flip(mask, 1) 
-            mask = cv2.rotate(mask, cv2.ROTATE_180) 
-        
-        return mask
+    if aspect_ratio > 1: # Landscape
+        mask_path = RENDERFOREST_LANDSCAPE_MASK_PATH
     else:
-        raise ValueError("Invalid video type")
-
+        mask_path = RENDERFOREST_PORTRAIT_MASK_PATH
+    return cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
+    
 
 
 async def process_video_task(
@@ -75,13 +48,12 @@ async def process_video_task(
     audio_path: str, 
     job_id: str, 
     video_type: VideoType,
-    watermark_location: WatermarkLocation,
     watermark_bounds: Optional[WatermarkBounds],
     processing_jobs: dict[str, ProcessingStatus]
 ):
     cap = None  # Initialize cap to None
     output_path = None
-    print(video_type, watermark_location)
+    print(video_type)
 
     try:
         # Get video dimensions first (used by mask generation and video writer)
@@ -90,7 +62,7 @@ async def process_video_task(
         print(f"Video dimensions: width={width}, height={height}")
 
         # Generate or select mask based on whether custom bounds are provided
-        if watermark_bounds:
+        if video_type == VideoType.capcut:
             mask = generate_mask(
                 width=width,
                 height=height,
@@ -99,8 +71,8 @@ async def process_video_task(
                 watermark_width=watermark_bounds.width,
                 watermark_height=watermark_bounds.height,
             )
-        else:
-            mask = select_mask(video_type, width, height, watermark_location)
+        else: # video_type == VideoType.renderforest
+            mask = select_renderforest_mask(video_type, width, height)
         
         # Resize mask
         mask = cv2.resize(mask, (width, height), interpolation=cv2.INTER_NEAREST)
