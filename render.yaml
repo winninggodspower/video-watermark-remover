@@ -11,4 +11,4 @@ services:
       (cd React && npm install && npm run build)
       (cd FastApi && pip install -r requirements.txt)
       apt-get update && apt-get install -y ffmpeg
-    startCommand:  PYTHONPATH=. fastapi run --workers 2 --host 0.0.0.0 --port $PORT app.py
+    startCommand:  PYTHONPATH=. fastapi run --workers 2 --host 0.0.0.0 --port $PORT FastApi.app.py
