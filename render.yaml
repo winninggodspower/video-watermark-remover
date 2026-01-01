@@ -6,9 +6,9 @@ services:
     plan: free
     autoDeploy: false
     build:
-          path: ./FastApi
+          path: ./backend
     buildCommand: |
       cd ../React && npm install && npm run build
-      cd ../FastApi && pip install -r requirements.txt
+      cd ../backend && pip install -r requirements.txt
       apt-get update && apt-get install -y ffmpeg
     startCommand: uvicorn app:app --host 0.0.0.0 --port $PORT
