@@ -1,3 +1,4 @@
+import asyncio
 import subprocess
 from typing import Annotated, Optional
 from fastapi import FastAPI, Form, UploadFile, HTTPException, BackgroundTasks
@@ -117,12 +118,23 @@ async def inpaint_video(
     
     print('about to start background task')
     # Start processing in background
-    background_tasks.add_task(
-        process_video_task, 
-        video_path, 
-        audio_path, 
-        job_id, 
-        video_type, 
+    # background_tasks.add_task(
+    #     process_video_task, 
+    #     video_path, 
+    #     audio_path, 
+    #     job_id, 
+    #     video_type, 
+    #     watermark_bounds,
+    #     processing_jobs
+    # )
+    loop = asyncio.get_running_loop()
+    loop.run_in_executor(
+        None,
+        process_video_task,
+        video_path,
+        audio_path,
+        job_id,
+        video_type,
         watermark_bounds,
         processing_jobs
     )

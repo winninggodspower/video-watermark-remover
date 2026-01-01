@@ -30,6 +30,7 @@ export const useJobPolling = (jobId) => {
 
         if (status === 'completed') {
           clearInterval(interval);
+          setError(null);
           setIsProcessing(false);
           setIsDownloading(true);
 

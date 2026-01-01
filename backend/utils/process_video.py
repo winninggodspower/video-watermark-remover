@@ -73,7 +73,7 @@ def select_renderforest_mask(
     
 
 
-async def process_video_task(
+def process_video_task(
     video_path: str, 
     audio_path: str, 
     job_id: str, 
@@ -154,7 +154,7 @@ async def process_video_task(
                     raise MemoryError(f"Memory usage too high: {memory_mb:.1f}MB")
             
             # Simulate asynchronous progress updates
-            await asyncio.sleep(0.01)
+            # await asyncio.sleep(0.01)
         
         cap.release()
         out.release()
