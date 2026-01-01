@@ -96,7 +96,7 @@ function App() {
           <option value="renderforest">RenderForest</option>
           <option value="capcut">CapCut</option>
         </select>
-        {videoType === 'capcut' && (
+        {videoType === 'capcut' && !videoFile && (
           <select
             value={watermarkLocation}
             onChange={(e) => setWatermarkLocation(e.target.value)}

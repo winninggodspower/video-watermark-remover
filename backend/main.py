@@ -10,9 +10,10 @@ import uuid
 
 from .constants import (
     UPLOAD_FOLDER, ProcessingStatus, VideoType, 
-    WatermarkBounds
+    WatermarkBounds, MAX_VIDEO_WIDTH, MAX_VIDEO_HEIGHT, 
+    MAX_VIDEO_DURATION_SECONDS, MAX_FILE_SIZE_MB
 )
-from .utils.process_video import is_allowed_video, process_video_task
+from .utils.process_video import is_allowed_video, process_video_task, validate_video_properties
 
 app = FastAPI()
 
@@ -85,6 +86,15 @@ async def inpaint_video(
             shutil.copyfileobj(video.file, buffer)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to save uploaded video: {str(e)}")
+    
+    # Validate video properties
+    try:
+        validate_video_properties(video_path)
+    except ValueError as e:
+        # Clean up uploaded file
+        if os.path.exists(video_path):
+            os.remove(video_path)
+        raise HTTPException(status_code=400, detail=str(e))
     
     # Extract audio using FFmpeg
     audio_path = os.path.join(UPLOAD_FOLDER, f"{job_id}_audio.mp3")

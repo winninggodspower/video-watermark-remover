@@ -46,3 +46,9 @@ class WatermarkLocation(str, Enum):
     
 
 ALLOWED_VIDEO_EXTENSIONS = {"mp4"}
+
+# Video processing limits
+MAX_VIDEO_WIDTH = 1920
+MAX_VIDEO_HEIGHT = 1080
+MAX_VIDEO_DURATION_SECONDS = 300  # 5 minutes
+MAX_FILE_SIZE_MB = 100

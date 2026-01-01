@@ -4,6 +4,8 @@ import os
 import subprocess
 from typing import Optional, Tuple
 import cv2
+import psutil
+import gc
 
 from backend.constants import (
     ALLOWED_VIDEO_EXTENSIONS,
@@ -15,13 +17,41 @@ from backend.constants import (
     ProcessingStatus, 
     VideoType,
     WatermarkBounds, 
-    WatermarkLocation
+    WatermarkLocation,
+    MAX_VIDEO_WIDTH,
+    MAX_VIDEO_HEIGHT,
+    MAX_VIDEO_DURATION_SECONDS,
+    MAX_FILE_SIZE_MB
 )
 from backend.utils.generate_mask import generate_mask
 
 
 def is_allowed_video(filename: str) -> bool:
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_VIDEO_EXTENSIONS
+
+def validate_video_properties(video_path: str) -> None:
+    """Validate video properties to prevent memory issues."""
+    cap = cv2.VideoCapture(video_path)
+    if not cap.isOpened():
+        raise ValueError("Could not open video file")
+    
+    try:
+        width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        duration = cap.get(cv2.CAP_PROP_FRAME_COUNT) / cap.get(cv2.CAP_PROP_FPS)
+        file_size = os.path.getsize(video_path) / (1024 * 1024)  # MB
+        
+        if width > MAX_VIDEO_WIDTH or height > MAX_VIDEO_HEIGHT:
+            raise ValueError(f"Video resolution too high: {width}x{height}. Max allowed: {MAX_VIDEO_WIDTH}x{MAX_VIDEO_HEIGHT}")
+        
+        if duration > MAX_VIDEO_DURATION_SECONDS:
+            raise ValueError(f"Video too long: {duration:.1f}s. Max allowed: {MAX_VIDEO_DURATION_SECONDS}s")
+        
+        if file_size > MAX_FILE_SIZE_MB:
+            raise ValueError(f"Video file too large: {file_size:.1f}MB. Max allowed: {MAX_FILE_SIZE_MB}MB")
+            
+    finally:
+        cap.release()
 
 def get_video_dimensions(video_path: str) -> Tuple[int, int]:
     cap = cv2.VideoCapture(video_path)
@@ -98,13 +128,31 @@ async def process_video_task(
             if not success:
                 break
             
-            mask_video = cv2.inpaint(frame, mask, 3, cv2.INPAINT_TELEA)
+            # Apply inpainting with optimized parameters
+            mask_video = cv2.inpaint(frame, mask, 1, cv2.INPAINT_TELEA)  # Reduced radius from 3 to 1
             out.write(mask_video)
+            
+            # Explicitly delete frame to free memory immediately
+            del frame
+            del mask_video
             
             processed_frames += 1
             progress = (processed_frames / total_frames) * 100
             processing_jobs[job_id].progress = progress
 
+            # Memory management: force garbage collection and monitor memory usage
+            if processed_frames % 50 == 0:  # More frequent cleanup
+                gc.collect()
+                
+                # Monitor memory usage
+                process = psutil.Process()
+                memory_mb = process.memory_info().rss / 1024 / 1024
+                logging.debug(f"Memory usage: {memory_mb:.1f}MB, Frame: {processed_frames}/{total_frames}")
+                
+                # If memory usage gets too high, raise an error
+                if memory_mb > 400:  # Leave some buffer below 512MB limit
+                    raise MemoryError(f"Memory usage too high: {memory_mb:.1f}MB")
+            
             # Simulate asynchronous progress updates
             await asyncio.sleep(0.01)
         
