@@ -5,7 +5,7 @@ import subprocess
 from typing import Optional, Tuple
 import cv2
 
-from FastApi.constants import (
+from backend.constants import (
     ALLOWED_VIDEO_EXTENSIONS,
     CAPCUT_LANDSCAPE_MASK_PATH_FULL, 
     CAPCUT_PORTRAIT_MASK_PATH_FULL, 
@@ -17,7 +17,7 @@ from FastApi.constants import (
     WatermarkBounds, 
     WatermarkLocation
 )
-from FastApi.utils.generate_mask import generate_mask
+from backend.utils.generate_mask import generate_mask
 
 
 def is_allowed_video(filename: str) -> bool:
