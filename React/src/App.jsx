@@ -14,6 +14,8 @@ function App() {
   const [watermarkLocation, setWatermarkLocation] = useState('top_left');
   const [watermarkBounds, setWatermarkBounds] = useState(null);
 
+  const [isUploading, setIsUploading] = useState(false);
+
   const { progress, isProcessing, isDownloading, processedVideoUrl, error } = useJobPolling(jobId);
 
   const handleReset = () => {
@@ -52,6 +54,8 @@ function App() {
   const handleRemoveWatermark = async () => {
     if (!videoFileObject) return;
 
+    setIsUploading(true); // start upload
+
     try {
       const newJobId = await uploadVideoForInpainting(
         videoFileObject, 
@@ -63,6 +67,8 @@ function App() {
       console.log('Job ID:', newJobId);
     } catch (err) {
       alert('Error uploading video');
+    } finally {
+      setIsUploading(false); // end upload
     }
   };
 
@@ -125,11 +131,17 @@ function App() {
         processedVideoUrl={processedVideoUrl}
       />
 
+      {isUploading && (
+        <div className="mt-4 text-yellow-300 flex items-center gap-2">
+          Uploading video to server... ⏳
+        </div>
+      )}
+
       {/* Action Buttons */}
       <div className="mt-8 flex space-x-4">
         {!processedVideoUrl && (
           <button
-            disabled={!videoFile || isProcessing}
+            disabled={!videoFile || isProcessing || isUploading}
             onClick={handleRemoveWatermark}
             className="px-8 py-3 border-2 border-white text-white hover:text-black hover:scale-105 transition-all duration-300 relative overflow-hidden group flex items-center"
           >
