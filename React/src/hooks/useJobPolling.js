@@ -49,7 +49,7 @@ export const useJobPolling = (jobId) => {
         setIsProcessing(false);
         setError('Error checking job status');
       }
-    }, 1000);
+    }, 1500);
 
     return () => clearInterval(interval);
   }, [jobId]);
