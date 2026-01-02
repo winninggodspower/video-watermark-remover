@@ -81,7 +81,6 @@ async def inpaint_video(
     
     # Save uploaded video
     video_path = os.path.join(UPLOAD_FOLDER, f"{job_id}_video.mp4")
-    
     try:
         with open(video_path, "wb") as buffer:
             shutil.copyfileobj(video.file, buffer)
@@ -118,15 +117,6 @@ async def inpaint_video(
     
     print('about to start background task')
     # Start processing in background
-    # background_tasks.add_task(
-    #     process_video_task, 
-    #     video_path, 
-    #     audio_path, 
-    #     job_id, 
-    #     video_type, 
-    #     watermark_bounds,
-    #     processing_jobs
-    # )
     loop = asyncio.get_running_loop()
     loop.run_in_executor(
         None,

@@ -102,7 +102,7 @@ def process_video_task(
                 watermark_height=watermark_bounds.height,
             )
         else: # video_type == VideoType.renderforest
-            mask = select_renderforest_mask(video_type, width, height)
+            mask = select_renderforest_mask(width, height)
         
         # Resize mask
         mask = cv2.resize(mask, (width, height), interpolation=cv2.INTER_NEAREST)
