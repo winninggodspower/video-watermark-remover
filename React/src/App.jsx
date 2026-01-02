@@ -58,8 +58,8 @@ function App() {
 
     try {
       const newJobId = await uploadVideoForInpainting(
-        videoFileObject, 
-        videoType, 
+        videoFileObject,
+        videoType,
         watermarkLocation,
         watermarkBounds
       );
@@ -82,14 +82,6 @@ function App() {
         <p className="text-gray-400">
           Remove {videoType === 'renderforest' ? 'RenderForest' : 'CapCut'} watermarks from your videos in seconds
         </p>
-      </div>
-
-      <div>
-        {error && (
-          <div className="mb-4 p-3 bg-red-600 text-white rounded">
-            Error: {error}
-          </div>
-        )}
       </div>
 
       {/* Control Panel */}
@@ -118,6 +110,19 @@ function App() {
           <p className="text-gray-400 text-sm">👆 Position the red box over the watermark</p>
         )}
       </div>
+
+      {/* Error Message */}
+      {error && (
+        <div className="mb-4 flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-4 text-red-700">
+          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-red-100 text-red-600">
+            !
+          </div>
+          <div>
+            <p className="font-semibold">Something went wrong</p>
+            <p className="text-sm">{error}</p>
+          </div>
+        </div>
+      )}
 
       {/* Video Upload Zone */}
       <VideoUploadZone
