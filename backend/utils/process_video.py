@@ -129,7 +129,7 @@ def process_video_task(
                 break
             
             # Apply inpainting with optimized parameters
-            mask_video = cv2.inpaint(frame, mask, 1, cv2.INPAINT_TELEA)  # Reduced radius from 3 to 1
+            mask_video = cv2.inpaint(frame, mask, 2, cv2.INPAINT_TELEA)  # Reduced radius from 3 to 2
             out.write(mask_video)
             
             # Explicitly delete frame to free memory immediately
@@ -167,11 +167,11 @@ def process_video_task(
             "-i", audio_path,
             "-c:v", "libx264",   # encode video
             "-crf", "18",       # visually lossless
-            "-preset", "fast",  # reasonable speed
+            "-preset", "ultrafast",  # reasonable speed
             "-pix_fmt", "yuv420p",  # ensure browser compatibility
             "-c:a", "aac",       # encode audio
             "-b:a", "192k",
-            "-threads", "0",
+            "-threads", "1",
             "-y",final_output_path
         ], check=True)
 
