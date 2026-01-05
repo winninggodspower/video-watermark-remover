@@ -58,7 +58,7 @@ const UsageInstructions = () => {
             </div>
             <div className="flex-1">
               <img 
-                src={`/static/${step.image}`} 
+                src={`/static/${step.image}`} // serve images from react static
                 alt={`Step ${step.id}`} 
                 className={`w-full h-48 object-cover rounded-lg shadow-lg border border-gray-600 ${step.className || ''}`} />
             </div>
