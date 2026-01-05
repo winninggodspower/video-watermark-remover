@@ -92,7 +92,9 @@ def process_video_task(
         print(f"Video dimensions: width={width}, height={height}")
 
         # Generate or select mask based on whether custom bounds are provided
-        if video_type == VideoType.capcut:
+        if video_type == VideoType.renderforest:
+            mask = select_renderforest_mask(width, height)
+        else:  # capcut or others
             mask = generate_mask(
                 width=width,
                 height=height,
@@ -101,8 +103,6 @@ def process_video_task(
                 watermark_width=watermark_bounds.width,
                 watermark_height=watermark_bounds.height,
             )
-        else: # video_type == VideoType.renderforest
-            mask = select_renderforest_mask(width, height)
         
         # Resize mask
         mask = cv2.resize(mask, (width, height), interpolation=cv2.INTER_NEAREST)
@@ -193,4 +193,3 @@ def process_video_task(
             
         if output_path is not None and os.path.exists(output_path):
             os.remove(output_path)
-

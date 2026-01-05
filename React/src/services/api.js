@@ -5,7 +5,7 @@ export const uploadVideoForInpainting = async (videoFile, videoType, watermarkLo
   formData.append('video', videoFile);
   formData.append('video_type', videoType);
 
-  if (videoType === 'capcut') {
+  if (videoType !== 'renderforest') {
     if (watermarkBounds) {
       // Send custom bounds if provided
       formData.append('watermark_x', Math.round(watermarkBounds.x));

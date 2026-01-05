@@ -3,6 +3,7 @@ import { Eraser, Download } from 'lucide-react';
 import { VideoUploadZone } from './components/VideoUploadZone';
 import { useJobPolling } from './hooks/useJobPolling';
 import { uploadVideoForInpainting } from './services/api';
+import UsageInstructions from './components/UsageInstructions';
 import './App.css';
 
 function App() {
@@ -15,6 +16,7 @@ function App() {
   const [watermarkBounds, setWatermarkBounds] = useState(null);
 
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState(null);
 
   const { progress, isProcessing, isDownloading, processedVideoUrl, error } = useJobPolling(jobId);
 
@@ -35,11 +37,13 @@ function App() {
     setVideoFile(null);
     setVideoFileObject(null);
     setWatermarkBounds(null);
+    setUploadError(null);
   };
 
   const handleFileSelect = (file) => {
     setVideoFileObject(file);
     setJobId(null); // Reset job when new file is selected
+    setUploadError(null); // Clear previous upload errors
 
     const videoUrl = URL.createObjectURL(file);
     setVideoFile(videoUrl);
@@ -66,7 +70,7 @@ function App() {
       setJobId(newJobId);
       console.log('Job ID:', newJobId);
     } catch (err) {
-      alert('Error uploading video');
+      setUploadError(err.response?.data?.detail || err.message || 'Error uploading video');
     } finally {
       setIsUploading(false); // end upload
     }
@@ -75,14 +79,15 @@ function App() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 flex flex-col items-center justify-center p-4">
       {/* Header Section */}
-      <div className="text-center space-y-3 mb-4">
+      <div className="text-center space-y-3 mb-4 mt-2">
         <h1 className="text-3xl font-bold bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
           Video Watermark Remover
         </h1>
         <p className="text-gray-400">
-          Remove {videoType === 'renderforest' ? 'RenderForest' : 'CapCut'} watermarks from your videos in seconds
+          Remove {videoType === 'renderforest' ? 'RenderForest' : videoType === 'capcut' ? 'CapCut' : 'other'} watermarks from your videos in seconds
         </p>
       </div>
+
 
       {/* Control Panel */}
       <div className="flex items-center gap-4 mb-4">
@@ -93,8 +98,9 @@ function App() {
         >
           <option value="renderforest">RenderForest</option>
           <option value="capcut">CapCut</option>
+          <option value="others">Others</option>
         </select>
-        {videoType === 'capcut' && !videoFile && (
+        {videoType !== 'renderforest' && !videoFile && (
           <select
             value={watermarkLocation}
             onChange={(e) => setWatermarkLocation(e.target.value)}
@@ -106,20 +112,20 @@ function App() {
             <option value="bottom_right">Bottom Right</option>
           </select>
         )}
-        {videoType === 'capcut' && videoFile && (
-          <p className="text-gray-400 text-sm">👆 Position the red box over the watermark</p>
+        {videoType !== 'renderforest' && videoFile && (
+          <p className="text-gray-400 text-sm">👆 Position the blue box over the watermark</p>
         )}
       </div>
 
       {/* Error Message */}
-      {error && (
-        <div className="mb-4 flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-4 text-red-700">
-          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-red-100 text-red-600">
+      {(uploadError || error) && (
+        <div className="mb-4 flex items-start gap-3 rounded-lg border border-red-500 bg-red-900/30 p-4 text-red-300">
+          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white">
             !
           </div>
           <div>
             <p className="font-semibold">Something went wrong</p>
-            <p className="text-sm">{error}</p>
+            <p className="text-sm">{uploadError || error}</p>
           </div>
         </div>
       )}
@@ -131,7 +137,7 @@ function App() {
         isProcessing={isProcessing}
         progress={progress}
         onFileSelect={handleFileSelect}
-        showWatermarkSelector={videoType === 'capcut' && videoFile}
+        showWatermarkSelector={videoType !== 'renderforest' && videoFile}
         onWatermarkBoundsChange={setWatermarkBounds}
         processedVideoUrl={processedVideoUrl}
       />
@@ -165,7 +171,7 @@ function App() {
         )}
         {processedVideoUrl && !isDownloading && (
           <a
-            href={processedVideoUrl}
+          href={processedVideoUrl}
             download="inpainted_video.mp4"
             className="px-8 py-3 border-2 border-green-500 text-green-500 hover:text-white hover:bg-green-500 hover:scale-105 transition-all duration-300 relative overflow-hidden group flex items-center"
           >
@@ -184,6 +190,9 @@ function App() {
       {isProcessing && (
         <div className="mt-4 text-white">Processing: {progress.toFixed(2)}% ⏳</div>
       )}
+      
+      {/* Usage Instructions */}
+      <UsageInstructions />
     </div>
   );
 }

@@ -37,6 +37,7 @@ class WatermarkBounds(BaseModel):
 class VideoType(str, Enum):
     renderforest = "renderforest"
     capcut = "capcut"
+    others = "others"
 
 class WatermarkLocation(str, Enum):
     top_left = "top_left"

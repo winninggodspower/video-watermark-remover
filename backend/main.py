@@ -64,12 +64,12 @@ async def inpaint_video(
     if video.filename and not is_allowed_video(video.filename):
         raise HTTPException(status_code=400, detail="Invalid video file type")
     
-    # Validate watermark bounds for CapCut
-    if video_type == VideoType.capcut:
+    # Validate watermark bounds for CapCut and Others
+    if video_type != VideoType.renderforest:
         if not all([watermark_x is not None, watermark_y is not None, watermark_width, watermark_height]):
             raise HTTPException(
                 status_code=400, 
-                detail="CapCut requires watermark bounds (watermark_x, watermark_y, watermark_width, watermark_height)"
+                detail="CapCut and Others require watermark bounds (watermark_x, watermark_y, watermark_width, watermark_height)"
             )
         if watermark_width <= 0 or watermark_height <= 0:
             raise HTTPException(
