@@ -48,6 +48,28 @@ export const WatermarkSelector = ({ videoElement, onBoundsChange }) => {
     }
   };
 
+  const handleTouchStart = (e, action) => {
+    e.stopPropagation();
+    const touch = e.touches[0];
+    const containerRect = containerRef.current.getBoundingClientRect();
+    const videoRect = videoElement ? videoElement.getBoundingClientRect() : containerRect;
+
+    if (action === 'drag') {
+      setIsDragging(true);
+      // store drag start relative to video top-left
+      setDragStart({
+        x: touch.clientX - videoRect.left - bounds.x,
+        y: touch.clientY - videoRect.top - bounds.y,
+      });
+    } else if (action === 'resize') {
+      setIsResizing(true);
+      setDragStart({
+        x: touch.clientX,
+        y: touch.clientY,
+      });
+    }
+  };
+
   const handleMouseMove = (e) => {
     if (!containerRef.current) return;
     const containerRect = containerRef.current.getBoundingClientRect();
@@ -78,7 +100,44 @@ export const WatermarkSelector = ({ videoElement, onBoundsChange }) => {
     }
   };
 
+  const handleTouchMove = (e) => {
+    e.preventDefault(); // Prevent scrolling while dragging
+    if (!containerRef.current) return;
+    const touch = e.touches[0];
+    const containerRect = containerRef.current.getBoundingClientRect();
+    const videoRect = videoElement ? videoElement.getBoundingClientRect() : containerRect;
+
+    // video position and size relative to container
+    const videoWidth = videoRect.width;
+    const videoHeight = videoRect.height;
+
+    if (isDragging) {
+      // coordinates relative to video
+      const relX = touch.clientX - videoRect.left - dragStart.x;
+      const relY = touch.clientY - videoRect.top - dragStart.y;
+
+      const newX = Math.max(0, Math.min(relX, videoWidth - bounds.width));
+      const newY = Math.max(0, Math.min(relY, videoHeight - bounds.height));
+
+      setBounds(prev => ({ ...prev, x: newX, y: newY }));
+    } else if (isResizing) {
+      const deltaX = touch.clientX - dragStart.x;
+      const deltaY = touch.clientY - dragStart.y;
+
+      const newWidth = Math.max(50, Math.min(bounds.width + deltaX, videoWidth - bounds.x));
+      const newHeight = Math.max(30, Math.min(bounds.height + deltaY, videoHeight - bounds.y));
+
+      setBounds(prev => ({ ...prev, width: newWidth, height: newHeight }));
+      setDragStart({ x: touch.clientX, y: touch.clientY });
+    }
+  };
+
   const handleMouseUp = () => {
+    setIsDragging(false);
+    setIsResizing(false);
+  };
+
+  const handleTouchEnd = () => {
     setIsDragging(false);
     setIsResizing(false);
   };
@@ -87,10 +146,14 @@ export const WatermarkSelector = ({ videoElement, onBoundsChange }) => {
     if (isDragging || isResizing) {
       window.addEventListener('mousemove', handleMouseMove);
       window.addEventListener('mouseup', handleMouseUp);
+      window.addEventListener('touchmove', handleTouchMove, { passive: false });
+      window.addEventListener('touchend', handleTouchEnd);
       
       return () => {
         window.removeEventListener('mousemove', handleMouseMove);
         window.removeEventListener('mouseup', handleMouseUp);
+        window.removeEventListener('touchmove', handleTouchMove);
+        window.removeEventListener('touchend', handleTouchEnd);
       };
     }
   }, [isDragging, isResizing, dragStart, bounds]);
@@ -135,6 +198,7 @@ export const WatermarkSelector = ({ videoElement, onBoundsChange }) => {
           height: `${bounds.height}px`,
         }}
         onMouseDown={(e) => handleMouseDown(e, 'drag')}
+        onTouchStart={(e) => handleTouchStart(e, 'drag')}
       >
         {/* Drag handle */}
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none">
@@ -145,6 +209,7 @@ export const WatermarkSelector = ({ videoElement, onBoundsChange }) => {
         <div
           className="absolute bottom-0 right-0 w-4 h-4 bg-blue-500 cursor-se-resize"
           onMouseDown={(e) => handleMouseDown(e, 'resize')}
+          onTouchStart={(e) => handleTouchStart(e, 'resize')}
         />
         
         {/* Corner indicators */}
