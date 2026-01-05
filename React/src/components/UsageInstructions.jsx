@@ -31,7 +31,8 @@ const UsageInstructions = () => {
     {
       id: 6,
       description: "Download your watermark-free video using the download button",
-      image: "step-6.png"
+      image: "step-6.png",
+      className: "object-bottom"
     }
   ];
 
@@ -56,7 +57,10 @@ const UsageInstructions = () => {
               </div>
             </div>
             <div className="flex-1">
-              <img src={step.image} alt={`Step ${step.id}`} className={`w-full h-48 object-cover rounded-lg shadow-lg border border-gray-600 ${step.className || ''}`} />
+              <img 
+                src={`/static/${step.image}`} 
+                alt={`Step ${step.id}`} 
+                className={`w-full h-48 object-cover rounded-lg shadow-lg border border-gray-600 ${step.className || ''}`} />
             </div>
           </div>
         ))}
